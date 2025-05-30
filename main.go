@@ -47,6 +47,7 @@ func main() {
 	// Create router
 	router := mux.NewRouter()
 	router.HandleFunc("/", homePage).Methods("GET")
+	router.HandleFunc("/about", aboutPage).Methods("GET")
 	router.HandleFunc("/users", getAllUsers(db)).Methods("GET")
 	router.HandleFunc("/users/{id}", getUserById(db)).Methods("GET")
 	router.HandleFunc("/users", createUser(db)).Methods("POST")
@@ -66,6 +67,10 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to the API")
+}
+
+func aboutPage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "About us page, could become an API, later")
 }
 
 func getAllUsers(db *sql.DB) http.HandlerFunc {

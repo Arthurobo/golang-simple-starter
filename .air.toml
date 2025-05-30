@@ -1,0 +1,14 @@
+# .air.toml
+# This config ensures Air watches your code, rebuilds it on change, and disables VCS metadata issues
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -buildvcs=false -o ./tmp/main ."
+  bin = "tmp/main"
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "vendor"]
+  delay = 1000
+  log = "air.log"
+  send_interrupt = true
