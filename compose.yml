@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  api:
+    container_name: api
+    build: .
+    environment:
+      - DATABASE_URL=host=go_db user=postgres password=postgres dbname=postgres port=5432 sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      - go_db
+
+  go_db:
+    container_name: go_db
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
