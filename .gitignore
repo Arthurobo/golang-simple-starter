@@ -287,3 +287,4 @@ dev-working-folder/
 dev_reports/
 
 /staticfiles/
+tmp/
