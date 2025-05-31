@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"net/mail"
 
 	"github.com/gorilla/mux"
 )
@@ -40,21 +39,52 @@ func getHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+func writeJSONError(w http.ResponseWriter, status int, message string, details interface{}) {
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": message,
+		"error":   details,
+	})
+}
+
 func createHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var u User
+		var u CreateUser
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "Invalid request payload", nil)
 			return
 		}
-		if _, err := mail.ParseAddress(u.Email); err != nil {
-			http.Error(w, "Invalid email address", http.StatusBadRequest)
+
+		if errs := u.Validate(); len(errs) > 0 {
+			writeJSONError(w, http.StatusBadRequest, "Validation failed", errs)
 			return
 		}
+
+		existingUserEmail, err := GetUserByEmail(db, u.Email)
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, "Failed to check email", err.Error())
+			return
+		}
+		if existingUserEmail.ID != 0 {
+			writeJSONError(w, http.StatusBadRequest, "Email already exists", nil)
+			return
+		}
+
+		existingUserUsername, err := GetUserByUsername(db, u.Username)
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, "Failed to check username", err.Error())
+			return
+		}
+		if existingUserUsername.ID != 0 {
+			writeJSONError(w, http.StatusBadRequest, "Username already exists", nil)
+			return
+		}
+
 		if err := Create(db, &u); err != nil {
-			http.Error(w, "Failed to create user", http.StatusInternalServerError)
+			writeJSONError(w, http.StatusInternalServerError, "Failed to create user", err.Error())
 			return
 		}
+
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(u)
 	}
@@ -63,7 +93,7 @@ func createHandler(db *sql.DB) http.HandlerFunc {
 func updateHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		var u User
+		var u UpdateUser
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			http.Error(w, "Invalid payload", http.StatusBadRequest)
 			return
