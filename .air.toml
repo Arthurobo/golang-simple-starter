@@ -1,11 +1,11 @@
 # .air.toml
-# This config ensures Air watches your code, rebuilds it on change, and disables VCS metadata issues
+# Configures Air to watch your app and build the actual entry point in cmd/api
 
 root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -buildvcs=false -o ./tmp/main ."
+  cmd = "go build -buildvcs=false -o ./tmp/main ./cmd/api"
   bin = "tmp/main"
   include_ext = ["go"]
   exclude_dir = ["tmp", "vendor"]

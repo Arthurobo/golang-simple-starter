@@ -14,7 +14,8 @@ COPY go.sum ./
 RUN go mod download
 
 COPY . .
+COPY .air.toml . 
 
 EXPOSE 8080
 
-CMD ["air"]
+CMD ["air", "-c", ".air.toml"]
