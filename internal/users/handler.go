@@ -93,21 +93,23 @@ func loginHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		user, err := GetUserByEmail(db, req.Email)
-		if err != nil {
+		if err != nil || bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)) != nil {
 			utils.WriteJSONError(w, http.StatusUnauthorized, "Invalid email or password", nil)
 			return
 		}
 
-		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+		accessToken, refreshToken, err := utils.GenerateTokens(user.ID, user.Email, user.FirstName, user.LastName)
 		if err != nil {
-			utils.WriteJSONError(w, http.StatusUnauthorized, "Invalid email or password", nil)
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Token generation failed", nil)
 			return
 		}
 
 		utils.WriteJSONSuccess(w, http.StatusOK, "Login successful", map[string]interface{}{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
+			"access":     accessToken,
+			"refresh":    refreshToken,
+			"email":      user.Email,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
 		})
 	}
 }
