@@ -1,6 +1,7 @@
 package user
 
 import (
+	"api/pkg/utils"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -20,10 +21,10 @@ func getAllHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		users, err := GetAll(db)
 		if err != nil {
-			http.Error(w, "Error fetching users", http.StatusInternalServerError)
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Error fetching users", err.Error())
 			return
 		}
-		json.NewEncoder(w).Encode(users)
+		utils.WriteJSONSuccess(w, http.StatusOK, "Users fetched successfully", users)
 	}
 }
 
@@ -32,61 +33,52 @@ func getHandler(db *sql.DB) http.HandlerFunc {
 		id := mux.Vars(r)["id"]
 		user, err := GetByID(db, id)
 		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
+			utils.WriteJSONError(w, http.StatusNotFound, "User not found", nil)
 			return
 		}
-		json.NewEncoder(w).Encode(user)
+		utils.WriteJSONSuccess(w, http.StatusOK, "User fetched successfully", user)
 	}
-}
-
-func writeJSONError(w http.ResponseWriter, status int, message string, details interface{}) {
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": message,
-		"error":   details,
-	})
 }
 
 func createHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var u CreateUser
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			writeJSONError(w, http.StatusBadRequest, "Invalid request payload", nil)
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request payload", nil)
 			return
 		}
 
 		if errs := u.Validate(); len(errs) > 0 {
-			writeJSONError(w, http.StatusBadRequest, "Validation failed", errs)
+			utils.WriteJSONError(w, http.StatusBadRequest, "Validation failed", errs)
 			return
 		}
 
 		existingUserEmail, err := GetUserByEmail(db, u.Email)
 		if err != nil {
-			writeJSONError(w, http.StatusInternalServerError, "Failed to check email", err.Error())
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to check email", err.Error())
 			return
 		}
 		if existingUserEmail.ID != 0 {
-			writeJSONError(w, http.StatusBadRequest, "Email already exists", nil)
+			utils.WriteJSONError(w, http.StatusBadRequest, "Email already exists", nil)
 			return
 		}
 
 		existingUserUsername, err := GetUserByUsername(db, u.Username)
 		if err != nil {
-			writeJSONError(w, http.StatusInternalServerError, "Failed to check username", err.Error())
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to check username", err.Error())
 			return
 		}
 		if existingUserUsername.ID != 0 {
-			writeJSONError(w, http.StatusBadRequest, "Username already exists", nil)
+			utils.WriteJSONError(w, http.StatusBadRequest, "Username already exists", nil)
 			return
 		}
 
 		if err := Create(db, &u); err != nil {
-			writeJSONError(w, http.StatusInternalServerError, "Failed to create user", err.Error())
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to create user", err.Error())
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(u)
+		utils.WriteJSONSuccess(w, http.StatusCreated, "User Created successfully", u)
 	}
 }
 
@@ -95,28 +87,26 @@ func updateHandler(db *sql.DB) http.HandlerFunc {
 		id := mux.Vars(r)["id"]
 		var u UpdateUser
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, "Invalid payload", http.StatusBadRequest)
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid payload", nil)
 			return
 		}
 		if err := Update(db, id, &u); err != nil {
-			http.Error(w, "Failed to update user", http.StatusInternalServerError)
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to update user", err.Error())
 			return
 		}
-		json.NewEncoder(w).Encode(u)
+		u.ID = id
+		utils.WriteJSONSuccess(w, http.StatusOK, "User updated successfully", u)
 	}
 }
 
 func deleteHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		u, err := Delete(db, id)
+		_, err := Delete(db, id)
 		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
+			utils.WriteJSONError(w, http.StatusNotFound, "User not found", nil)
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "User deleted successfully",
-			"user":    u,
-		})
+		utils.WriteJSONSuccess(w, http.StatusOK, "User deleted successfully", nil)
 	}
 }
