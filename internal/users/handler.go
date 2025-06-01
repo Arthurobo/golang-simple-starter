@@ -42,7 +42,7 @@ func getHandler(db *sql.DB) http.HandlerFunc {
 
 func createHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var u CreateUser
+		var u CreateUserModel
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request payload", nil)
 			return
@@ -85,7 +85,7 @@ func createHandler(db *sql.DB) http.HandlerFunc {
 func updateHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		var u UpdateUser
+		var u UpdateUserModel
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid payload", nil)
 			return

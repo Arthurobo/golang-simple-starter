@@ -2,7 +2,7 @@ package users
 
 import "api/pkg/validators"
 
-type CreateUser struct {
+type CreateUserModel struct {
 	ID        int    `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
@@ -10,7 +10,7 @@ type CreateUser struct {
 	Username  string `json:"username"`
 }
 
-func (u *CreateUser) Validate() []string {
+func (u *CreateUserModel) Validate() []string {
 	var errors []string
 	if u.Email == "" {
 		errors = append(errors, "email is required")
@@ -30,21 +30,21 @@ func (u *CreateUser) Validate() []string {
 	return errors
 }
 
-type UpdateUser struct {
+type UpdateUserModel struct {
 	ID        string `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
 
-type GetAllUsers struct {
+type GetAllUsersModel struct {
 	ID        int    `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 }
 
-type IndividualUser struct {
+type IndividualUserModel struct {
 	ID        int    `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
