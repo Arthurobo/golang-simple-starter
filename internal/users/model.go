@@ -2,12 +2,17 @@ package users
 
 import "api/pkg/validators"
 
+type LoginRequestModel struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 type CreateUserModel struct {
 	ID        int    `json:"id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Username  string `json:"username"`
+	Password  string `json:"password"`
 }
 
 func (u *CreateUserModel) Validate() []string {
@@ -27,6 +32,9 @@ func (u *CreateUserModel) Validate() []string {
 	if u.LastName == "" {
 		errors = append(errors, "last_name is required")
 	}
+	if u.Password == "" {
+		errors = append(errors, "password is required")
+	}
 	return errors
 }
 
@@ -42,6 +50,7 @@ type GetAllUsersModel struct {
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
+	Username  string `json:"username"`
 }
 
 type IndividualUserModel struct {
@@ -50,4 +59,5 @@ type IndividualUserModel struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Username  string `json:"username"`
+	Password  string `json:"-"` // This is not returned in the response, using it for comparison
 }

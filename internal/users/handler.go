@@ -7,9 +7,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func RegisterRoutes(r *mux.Router, db *sql.DB) {
+	r.HandleFunc("/users/login", loginHandler(db)).Methods("POST")
 	r.HandleFunc("/users", getAllHandler(db)).Methods("GET")
 	r.HandleFunc("/users/{id}", getHandler(db)).Methods("GET")
 	r.HandleFunc("/users", createHandler(db)).Methods("POST")
@@ -79,6 +81,34 @@ func createHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		utils.WriteJSONSuccess(w, http.StatusCreated, "User Created successfully", u)
+	}
+}
+
+func loginHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req LoginRequestModel
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request", nil)
+			return
+		}
+
+		user, err := GetUserByEmail(db, req.Email)
+		if err != nil {
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Invalid email or password", nil)
+			return
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+		if err != nil {
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Invalid email or password", nil)
+			return
+		}
+
+		utils.WriteJSONSuccess(w, http.StatusOK, "Login successful", map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		})
 	}
 }
 
