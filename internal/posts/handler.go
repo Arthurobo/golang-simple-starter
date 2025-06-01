@@ -1,16 +1,20 @@
 package posts
 
 import (
+	"api/pkg/middleware"
 	"api/pkg/utils"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
 func RegisterRoutes(r *mux.Router, db *sql.DB) {
-	r.HandleFunc("/posts", getAllPostsHandler(db)).Methods("GET")
+	// r.HandleFunc("/posts", getAllPostsHandler(db)).Methods("GET")
+	r.Handle("/posts", middleware.AuthMiddleware(http.HandlerFunc(getAllPostsHandler(db)))).Methods("GET")
 	r.HandleFunc("/posts", createPostHandler(db)).Methods("POST")
 	r.HandleFunc("/posts/{id}", getPostHandler(db)).Methods("GET")
 	r.HandleFunc("/posts/{id}", updatePostHandler(db)).Methods("PUT")
@@ -19,6 +23,10 @@ func RegisterRoutes(r *mux.Router, db *sql.DB) {
 
 func getAllPostsHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userID := middleware.GetAuthenticatedUserID(w, r)
+		fmt.Println("Authenticated User ID:", userID)
+
 		posts, err := GetAllPosts(db)
 		if err != nil {
 			utils.WriteJSONError(w, http.StatusInternalServerError, "Error fetching posts", err.Error())
@@ -65,23 +73,29 @@ func createPostHandler(db *sql.DB) http.HandlerFunc {
 func updatePostHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		var p UpdatePostModel
-		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request payload", nil)
+		var post UpdatePostModel
+
+		if err := json.NewDecoder(r.Body).Decode(&post); err != nil {
+			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid payload", nil)
 			return
 		}
 
-		updated, err := UpdatePost(db, id, &p)
+		ok, err := UpdatePost(db, id, &post)
 		if err != nil {
-			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to update post", err.Error())
+			utils.WriteJSONError(w, http.StatusInternalServerError, "Update failed", err.Error())
 			return
 		}
-		if !updated {
-			utils.WriteJSONError(w, http.StatusNotFound, "Post not found", nil)
+		if !ok {
+			utils.WriteJSONError(w, http.StatusNotFound, "Post not found or already deleted", nil)
 			return
 		}
 
-		utils.WriteJSONSuccess(w, http.StatusOK, "Post updated successfully", p)
+		// ✅ Assign the correct ID back to the post model before returning
+		if postID, err := strconv.Atoi(id); err == nil {
+			post.ID = postID
+		}
+
+		utils.WriteJSONSuccess(w, http.StatusOK, "Post updated successfully", post)
 	}
 }
 
