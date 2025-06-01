@@ -15,7 +15,7 @@ import (
 func RegisterRoutes(r *mux.Router, db *sql.DB) {
 	// r.HandleFunc("/posts", getAllPostsHandler(db)).Methods("GET")
 	r.Handle("/posts", middleware.AuthMiddleware(http.HandlerFunc(getAllPostsHandler(db)))).Methods("GET")
-	r.HandleFunc("/posts", createPostHandler(db)).Methods("POST")
+	r.Handle("/posts", middleware.AuthMiddleware(http.HandlerFunc(createPostHandler(db)))).Methods("POST")
 	r.HandleFunc("/posts/{id}", getPostHandler(db)).Methods("GET")
 	r.HandleFunc("/posts/{id}", updatePostHandler(db)).Methods("PUT")
 	r.HandleFunc("/posts/{id}/delete", deletePostHandler(db)).Methods("PUT")
@@ -50,11 +50,15 @@ func getPostHandler(db *sql.DB) http.HandlerFunc {
 
 func createPostHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID := middleware.GetAuthenticatedUserID(w, r)
+
 		var p CreatePostModel
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Invalid request payload", nil)
 			return
 		}
+
+		p.UserID = userID
 
 		if errs := p.Validate(); len(errs) > 0 {
 			utils.WriteJSONError(w, http.StatusBadRequest, "Validation failed", errs)
@@ -65,8 +69,8 @@ func createPostHandler(db *sql.DB) http.HandlerFunc {
 			utils.WriteJSONError(w, http.StatusInternalServerError, "Failed to create post", err.Error())
 			return
 		}
-		utils.WriteJSONSuccess(w, http.StatusCreated, "Post created successfully", p)
 
+		utils.WriteJSONSuccess(w, http.StatusCreated, "Post created successfully", p)
 	}
 }
 
@@ -90,7 +94,6 @@ func updatePostHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// ✅ Assign the correct ID back to the post model before returning
 		if postID, err := strconv.Atoi(id); err == nil {
 			post.ID = postID
 		}

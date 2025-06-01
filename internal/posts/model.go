@@ -2,9 +2,9 @@ package posts
 
 type CreatePostModel struct {
 	ID      int    `json:"id"`
-	UserID  int    `json:"user_id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+	UserID  int    `json:"user_id"`
 }
 
 func (p *CreatePostModel) Validate() []string {
@@ -14,9 +14,6 @@ func (p *CreatePostModel) Validate() []string {
 	}
 	if p.Content == "" {
 		errors = append(errors, "content is required")
-	}
-	if p.UserID == 0 {
-		errors = append(errors, "user_id is required")
 	}
 	return errors
 }
