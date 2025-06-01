@@ -22,6 +22,7 @@ type UpdatePostModel struct {
 	ID      int    `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+	UserID  int    `json:"user_id"`
 }
 
 type AllPostsModel struct {

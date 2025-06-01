@@ -37,7 +37,7 @@ func CreatePost(db *sql.DB, p *CreatePostModel) error {
 }
 
 func UpdatePost(db *sql.DB, id string, p *UpdatePostModel) (bool, error) {
-	result, err := db.Exec("UPDATE posts SET title = $1, content = $2 WHERE id = $3 AND is_active = TRUE AND is_deleted = FALSE", p.Title, p.Content, id)
+	result, err := db.Exec("UPDATE posts SET title = $1, content = $2 WHERE id = $3 AND is_active = TRUE AND is_deleted = FALSE AND user_id = $4", p.Title, p.Content, id, p.UserID)
 	if err != nil {
 		return false, err
 	}
