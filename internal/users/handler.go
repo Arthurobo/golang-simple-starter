@@ -15,7 +15,7 @@ import (
 func RegisterRoutes(r *mux.Router, db *sql.DB) {
 	r.HandleFunc("/users/login", loginHandler(db)).Methods("POST")
 	r.HandleFunc("/users", getAllUsersHandler(db)).Methods("GET")
-	r.HandleFunc("/users", createHandler(db)).Methods("POST")
+	r.HandleFunc("/users", RegisterUserHandler(db)).Methods("POST")
 	r.HandleFunc("/users/{id}", updateHandler(db)).Methods("PUT")
 	r.HandleFunc("/users/{id}", deleteHandler(db)).Methods("DELETE")
 
@@ -59,7 +59,7 @@ func getUserByIDHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func createHandler(db *sql.DB) http.HandlerFunc {
+func RegisterUserHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var u CreateUserModel
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {

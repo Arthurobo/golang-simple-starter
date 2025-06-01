@@ -7,7 +7,7 @@ import (
 )
 
 func GetAll(db *sql.DB) ([]GetAllUsersModel, error) {
-	rows, err := db.Query("SELECT id, email, first_name, last_name, username FROM users")
+	rows, err := db.Query("SELECT id, email, first_name, last_name, username, is_active FROM users")
 	if err != nil {
 		return nil, err
 	}
@@ -16,7 +16,7 @@ func GetAll(db *sql.DB) ([]GetAllUsersModel, error) {
 	var users []GetAllUsersModel
 	for rows.Next() {
 		var u GetAllUsersModel
-		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.Username); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.Username, &u.IsActive); err != nil {
 			return nil, err
 		}
 		users = append(users, u)

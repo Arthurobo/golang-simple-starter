@@ -11,6 +11,8 @@ func CreateUsersTable(db *sql.DB) error {
 			first_name VARCHAR(255) NOT NULL,
 			last_name VARCHAR(255) NOT NULL,
 			password TEXT NOT NULL,
+			is_active BOOLEAN NOT NULL DEFAULT TRUE,
+			is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 			date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			last_updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)

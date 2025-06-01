@@ -51,6 +51,7 @@ type GetAllUsersModel struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Username  string `json:"username"`
+	IsActive  bool   `json:"is_active"`
 }
 
 type IndividualUserModel struct {
@@ -60,4 +61,6 @@ type IndividualUserModel struct {
 	LastName  string `json:"last_name"`
 	Username  string `json:"username"`
 	Password  string `json:"-"` // This is not returned in the response, using it for comparison
+	IsActive  bool   `json:"is_active"`
+	IsDeleted bool   `json:"-"`
 }
