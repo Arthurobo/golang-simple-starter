@@ -1,9 +1,11 @@
 package users
 
 import (
+	"api/pkg/middleware"
 	"api/pkg/utils"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -12,14 +14,16 @@ import (
 
 func RegisterRoutes(r *mux.Router, db *sql.DB) {
 	r.HandleFunc("/users/login", loginHandler(db)).Methods("POST")
-	r.HandleFunc("/users", getAllHandler(db)).Methods("GET")
-	r.HandleFunc("/users/{id}", getHandler(db)).Methods("GET")
+	r.HandleFunc("/users", getAllUsersHandler(db)).Methods("GET")
 	r.HandleFunc("/users", createHandler(db)).Methods("POST")
 	r.HandleFunc("/users/{id}", updateHandler(db)).Methods("PUT")
 	r.HandleFunc("/users/{id}", deleteHandler(db)).Methods("DELETE")
+
+	// Protected routes
+	r.Handle("/users/{id}", middleware.AuthMiddleware(http.HandlerFunc(getUserByIDHandler(db)))).Methods("GET")
 }
 
-func getAllHandler(db *sql.DB) http.HandlerFunc {
+func getAllUsersHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		users, err := GetAll(db)
 		if err != nil {
@@ -30,10 +34,23 @@ func getAllHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-func getHandler(db *sql.DB) http.HandlerFunc {
+func getUserByIDHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := mux.Vars(r)["id"]
-		user, err := GetByID(db, id)
+		// Ensure token is valid and extract user ID
+		userIDFromToken, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			utils.WriteJSONError(w, http.StatusUnauthorized, "Unauthorized", nil)
+			return
+		}
+
+		// Optionally restrict access to only self
+		idParam := mux.Vars(r)["id"]
+		if fmt.Sprint(userIDFromToken) != idParam {
+			utils.WriteJSONError(w, http.StatusForbidden, "Forbidden", nil)
+			return
+		}
+
+		user, err := GetByID(db, idParam)
 		if err != nil {
 			utils.WriteJSONError(w, http.StatusNotFound, "User not found", nil)
 			return
